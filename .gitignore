@@ -1,0 +1,181 @@
+# Colony App - Git Ignore File
+
+# ===========================================
+# Flutter/Dart
+# ===========================================
+# Flutter build artifacts
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/pubspec.lock
+
+# Flutter coverage
+coverage/
+
+# Flutter generated files
+**/*.g.dart
+**/*.freezed.dart
+**/*.mocks.dart
+
+# ===========================================
+# Dart
+# ===========================================
+# Dart analysis
+**/analysis_options.user.yaml
+
+# ===========================================
+# IDEs
+# ===========================================
+# VS Code
+.vscode/
+*.code-workspace
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# ===========================================
+# Platform Specific
+# ===========================================
+# Android
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+**/android/app/google-services.json
+**/android/app/release/
+
+# iOS
+**/ios/.symlinks/
+**/ios/Pods/
+**/ios/Podfile.lock
+**/ios/.generated/
+**/ios/Flutter/.last_build_id
+**/ios/DerivedData/
+**/ios/Icon?
+**/ios/*.dSYM.zip
+**/ios/*.ipa
+**/ios/*.xcuserstate
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/profile
+**/ios/**/xcuserdata
+**/ios/.generated/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+**/macos/.symlinks/
+**/macos/Pods/
+**/macos/Podfile.lock
+**/macos/.generated/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral/
+
+# Windows
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# Linux
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+
+# Web
+**/web/favicon.png
+**/web/icons/
+
+# ===========================================
+# Environment & Secrets
+# ===========================================
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Supabase
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# Firebase
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase.json
+**/.firebaserc
+
+# ===========================================
+# Node.js (Backend)
+# ===========================================
+**/node_modules/
+**/npm-debug.log
+**/yarn-error.log
+**/yarn.lock
+**/package-lock.json
+
+# ===========================================
+# Misc
+# ===========================================
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+*.log.*
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ===========================================
+# Project Specific
+# ===========================================
+# Keep empty directories
+!.gitkeep
+
+# Lottie animation source files (keep JSON exports)
+# **/animations/*.ae
+# **/animations/*.aep
