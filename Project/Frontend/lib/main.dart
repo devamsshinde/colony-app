@@ -206,17 +206,27 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
           return const LoginScreen();
         }
 
-        // Still checking onboarding status
+        // Still checking onboarding status - show splash
         if (_isCheckingOnboarding) {
           return const SplashScreen();
         }
 
-        // Check if user has completed onboarding
+        // If we haven't checked onboarding yet (_hasCompletedOnboarding is null),
+        // show splash screen while we check
+        if (_hasCompletedOnboarding == null) {
+          // Trigger the check if not already checking
+          if (!_isCheckingOnboarding) {
+            _checkOnboardingStatus();
+          }
+          return const SplashScreen();
+        }
+
+        // Check if user has NOT completed onboarding
         if (_hasCompletedOnboarding == false) {
           return const OnboardingFlowScreen();
         }
 
-        // Show location loading screen if fetching location
+        // User has completed onboarding - show location loading or home
         if (_isFetchingLocation && !_locationFetched) {
           return LocationLoadingScreen(
             onLocationFetched: _onLocationFetched,
