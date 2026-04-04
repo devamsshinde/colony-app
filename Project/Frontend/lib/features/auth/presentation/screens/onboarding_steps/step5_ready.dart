@@ -380,7 +380,7 @@ class _Step5ReadyState extends State<Step5Ready>
     await controller.saveOnboardingData();
     if (mounted && controller.state.onboardingComplete) {
       // Navigate to main app
-      Navigator.of(context).pushReplacementNamed('/main');
+      Navigator.of(context).pushReplacementNamed('/home');
     }
   }
 }
