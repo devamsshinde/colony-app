@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/auth/data/auth_state_notifier.dart';
 import 'features/auth/domain/auth_validators.dart';
+import 'features/auth/presentation/screens/email_verification_screen.dart';
+import 'features/auth/presentation/screens/phone_verification_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -92,7 +94,43 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() {
           _successMessage = 'Account created successfully!';
         });
-        // Navigation will be handled by auth state changes
+
+        // Navigate to email verification screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EmailVerificationScreen(
+              email: _emailController.text.trim(),
+              onVerified: () {
+                // After email verification, navigate to phone verification (optional)
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PhoneVerificationScreen(
+                      isOptional: true,
+                      onVerified: () {
+                        // Navigation to main screen will be handled by auth state
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/home', (route) => false);
+                      },
+                      onSkip: () {
+                        // Skip phone verification and go to main screen
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/home', (route) => false);
+                      },
+                    ),
+                  ),
+                );
+              },
+              onChangeEmail: () {
+                // Go back to signup
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        );
       } else if (mounted) {
         setState(() {
           _errorMessage = authNotifier.value.errorMessage ?? 'Signup failed';

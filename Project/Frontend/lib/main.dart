@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'core/services/supabase_service.dart';
 import 'features/auth/data/auth_state_notifier.dart';
 import 'login_screen.dart';
+import 'signup_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'features/auth/presentation/screens/email_verification_screen.dart';
+import 'features/auth/presentation/screens/phone_verification_screen.dart';
 
 void main() async {
   // Ensure Flutter bindings are initialized
@@ -31,6 +34,23 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Inter',
         ),
         home: const AuthWrapper(),
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignupScreen(),
+          '/home': (context) => const MainNavigationScreen(),
+          '/email-verification': (context) => EmailVerificationScreen(
+            email: ModalRoute.of(context)?.settings.arguments as String?,
+          ),
+          '/phone-verification': (context) => PhoneVerificationScreen(
+            isOptional: true,
+            onVerified: () {
+              Navigator.of(context).pushReplacementNamed('/home');
+            },
+            onSkip: () {
+              Navigator.of(context).pushReplacementNamed('/home');
+            },
+          ),
+        },
       ),
     );
   }
