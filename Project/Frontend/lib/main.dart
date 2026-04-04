@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/services/supabase_service.dart';
+import 'core/services/location_service.dart';
+import 'core/widgets/location_loading_screen.dart';
 import 'features/auth/data/auth_state_notifier.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
@@ -61,7 +63,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Wrapper widget that handles authentication state
+/// Wrapper widget that handles authentication state and location tracking
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -69,14 +71,73 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> {
+class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   bool _isCheckingOnboarding = false;
   bool? _hasCompletedOnboarding;
+  bool _isFetchingLocation = false;
+  bool _locationFetched = false;
+
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
     super.initState();
+    // Register for app lifecycle changes
+    WidgetsBinding.instance.addObserver(this);
     _checkOnboardingStatus();
+  }
+
+  @override
+  void dispose() {
+    // Clean up observer
+    WidgetsBinding.instance.removeObserver(this);
+    // Stop location tracking when widget is disposed
+    _locationService.stopTracking();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App came to foreground - start tracking and set online
+        _onAppResumed();
+        break;
+      case AppLifecycleState.paused:
+        // App went to background - stop tracking and set offline
+        _onAppPaused();
+        break;
+      case AppLifecycleState.detached:
+        // App is being closed - cleanup
+        _onAppDetached();
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        // Do nothing for these states
+        break;
+    }
+  }
+
+  Future<void> _onAppResumed() async {
+    // Start location tracking
+    await _locationService.startTracking();
+    // Set user as online
+    await _locationService.setUserOnline();
+  }
+
+  Future<void> _onAppPaused() async {
+    // Stop location tracking to save battery
+    _locationService.stopTracking();
+    // Set user as offline
+    await _locationService.setUserOffline();
+  }
+
+  Future<void> _onAppDetached() async {
+    // Stop tracking and set offline
+    _locationService.stopTracking();
+    await _locationService.setUserOffline();
   }
 
   Future<void> _checkOnboardingStatus() async {
@@ -97,6 +158,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
           _hasCompletedOnboarding = response['onboarding_completed'] ?? false;
           _isCheckingOnboarding = false;
         });
+
+        // If onboarding is complete, start location fetching
+        if (_hasCompletedOnboarding == true) {
+          _startLocationFetching();
+        }
       }
     } catch (e) {
       // Profile doesn't exist or error - user needs onboarding
@@ -107,6 +173,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
         });
       }
     }
+  }
+
+  void _startLocationFetching() {
+    setState(() {
+      _isFetchingLocation = true;
+    });
+  }
+
+  void _onLocationFetched() {
+    setState(() {
+      _isFetchingLocation = false;
+      _locationFetched = true;
+    });
   }
 
   @override
@@ -137,7 +216,18 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return const OnboardingFlowScreen();
         }
 
-        // User is authenticated and has completed onboarding
+        // Show location loading screen if fetching location
+        if (_isFetchingLocation && !_locationFetched) {
+          return LocationLoadingScreen(
+            onLocationFetched: _onLocationFetched,
+            onLocationFailed: () {
+              // Still proceed even if location fails
+              _onLocationFetched();
+            },
+          );
+        }
+
+        // User is authenticated, has completed onboarding, and location is ready
         return const MainNavigationScreen();
       },
     );
