@@ -14,21 +14,33 @@ class OnboardingFlowScreen extends StatefulWidget {
   State<OnboardingFlowScreen> createState() => _OnboardingFlowScreenState();
 }
 
-class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
+class _OnboardingFlowScreenState extends State<OnboardingFlowScreen>
+    with SingleTickerProviderStateMixin {
   late PageController _pageController;
   late OnboardingController _onboardingController;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
     _onboardingController = OnboardingController();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _animationController.forward();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _onboardingController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -57,8 +69,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     if (canProceed && currentState.currentStep < 4) {
       _onboardingController.nextStep();
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
       );
     }
   }
@@ -67,8 +79,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     if (_onboardingController.state.currentStep > 0) {
       _onboardingController.previousStep();
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
       );
     }
   }
@@ -110,78 +122,131 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     return Consumer<OnboardingController>(
       builder: (context, controller, child) {
         final currentStep = controller.state.currentStep;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Row(
-            children: [
-              // Back button
-              if (currentStep > 0)
-                GestureDetector(
-                  onTap: _goToPreviousPage,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                // Back button
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: currentStep > 0 ? 44 : 0,
+                  height: 44,
+                  child: currentStep > 0
+                      ? Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _goToPreviousPage,
+                            borderRadius: BorderRadius.circular(22),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 18,
+                                color: Color(0xFF14471E),
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                // Progress indicators
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(5, (index) {
+                          final isActive = index <= currentStep;
+                          final isCurrent = index == currentStep;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOutCubic,
+                            width: (constraints.maxWidth - 32) / 5 - 8,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? const Color(0xFF1E5631)
+                                  : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(3),
+                              boxShadow: isCurrent
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF1E5631,
+                                        ).withOpacity(0.4),
+                                        blurRadius: 6,
+                                        spreadRadius: 0,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                          );
+                        }),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Step counter with smooth animation
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOutCubic,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.3, 0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
                         ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 18,
-                      color: Color(0xFF14471E),
+                      );
+                    },
+                    child: Text(
+                      '${currentStep + 1}/5',
+                      key: ValueKey<int>(currentStep),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF14471E),
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                )
-              else
-                const SizedBox(width: 34),
-              const SizedBox(width: 16),
-              // Progress dots
-              Expanded(
-                child: Row(
-                  children: List.generate(5, (index) {
-                    final isActive = index <= currentStep;
-                    final isCurrent = index == currentStep;
-                    return Expanded(
-                      child: Container(
-                        height: 6,
-                        margin: EdgeInsets.only(right: index < 4 ? 8 : 0),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? const Color(0xFF1E5631)
-                              : Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(3),
-                          boxShadow: isCurrent
-                              ? [
-                                  BoxShadow(
-                                    color: const Color(
-                                      0xFF1E5631,
-                                    ).withOpacity(0.3),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                      ),
-                    );
-                  }),
                 ),
-              ),
-              // Step indicator
-              Text(
-                '${currentStep + 1}/5',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF14471E),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

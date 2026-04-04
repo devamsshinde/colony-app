@@ -219,7 +219,8 @@ class _Step2ProfileSetupState extends State<Step2ProfileSetup> {
           ),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 12,
+            spacing: 10,
+            runSpacing: 12,
             children: ['Male', 'Female', 'Non-binary', 'Prefer not to say'].map(
               (gender) {
                 final isSelected = _selectedGender == gender;
@@ -228,9 +229,11 @@ class _Step2ProfileSetupState extends State<Step2ProfileSetup> {
                     setState(() => _selectedGender = gender);
                     context.read<OnboardingController>().updateGender(gender);
                   },
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
+                      horizontal: 18,
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
@@ -242,13 +245,24 @@ class _Step2ProfileSetupState extends State<Step2ProfileSetup> {
                         color: isSelected
                             ? const Color(0xFF1E5631)
                             : Colors.grey.shade300,
+                        width: isSelected ? 2 : 1,
                       ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF1E5631).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Text(
                       gender,
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../controllers/onboarding_controller.dart';
 
 class Step4LocationPermission extends StatefulWidget {
@@ -15,6 +16,7 @@ class _Step4LocationPermissionState extends State<Step4LocationPermission>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   bool _isRequesting = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -32,6 +34,75 @@ class _Step4LocationPermissionState extends State<Step4LocationPermission>
   void dispose() {
     _pulseController.dispose();
     super.dispose();
+  }
+
+  Future<void> _requestLocation(OnboardingController controller) async {
+    setState(() {
+      _isRequesting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Check if location service is enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _isRequesting = false;
+          _errorMessage =
+              'Location services are disabled. Please enable location in your device settings.';
+        });
+        await Geolocator.openLocationSettings();
+        return;
+      }
+
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _isRequesting = false;
+            _errorMessage =
+                'Location permission denied. Please grant permission to continue.';
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _isRequesting = false;
+          _errorMessage =
+              'Location permission denied forever. Please enable in app settings.';
+        });
+        await Geolocator.openAppSettings();
+        return;
+      }
+
+      // Permission granted - use controller's method to get location
+      await controller.getCurrentLocation();
+
+      setState(() {
+        _isRequesting = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isRequesting = false;
+        _errorMessage = 'Failed to get location: ${e.toString()}';
+      });
+    }
+  }
+
+  void _navigateToNextPage() {
+    final pageView = context.findAncestorWidgetOfExactType<PageView>();
+    if (pageView?.controller != null) {
+      pageView!.controller!.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
+      );
+    }
   }
 
   @override
@@ -66,7 +137,6 @@ class _Step4LocationPermissionState extends State<Step4LocationPermission>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Pulse rings
                   ...List.generate(3, (index) {
                     return TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.5, end: 1.5),
@@ -150,146 +220,171 @@ class _Step4LocationPermissionState extends State<Step4LocationPermission>
                   controller.state.longitude != null;
 
               if (hasLocation) {
-                return Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.green.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: Colors.green.shade600,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Location Enabled',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2C3E30),
-                                  ),
-                                ),
-                                if (controller.state.locationName != null)
-                                  Text(
-                                    controller.state.locationName!,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          controller.nextStep();
-                          _navigateToNextPage();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E5631),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Continue',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward, color: Colors.white),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                );
+                return _buildLocationEnabledUI(controller);
               }
 
-              // Default - Request location button
-              return Column(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isRequesting
-                          ? null
-                          : () => _requestLocation(controller),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E5631),
-                        disabledBackgroundColor: Colors.grey.shade300,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isRequesting
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.location_on, color: Colors.white),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Enable Location',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      controller.nextStep();
-                      _navigateToNextPage();
-                    },
-                    child: const Text(
-                      'Skip for now',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    ),
-                  ),
-                ],
-              );
+              return _buildRequestLocationUI(controller);
             },
           ),
           const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  Widget _buildLocationEnabledUI(OnboardingController controller) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.green.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green.shade600),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Location Enabled',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2C3E30),
+                      ),
+                    ),
+                    if (controller.state.locationName != null)
+                      Text(
+                        controller.state.locationName!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: () {
+              controller.nextStep();
+              _navigateToNextPage();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E5631),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              elevation: 0,
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Continue',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.arrow_forward, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRequestLocationUI(OnboardingController controller) {
+    return Column(
+      children: [
+        if (_errorMessage != null)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red.shade600, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: _isRequesting
+                ? null
+                : () => _requestLocation(controller),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E5631),
+              disabledBackgroundColor: Colors.grey.shade300,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              elevation: 0,
+            ),
+            child: _isRequesting
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.location_on, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Enable Location',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Location is required to find nearby people and events',
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
@@ -311,21 +406,5 @@ class _Step4LocationPermissionState extends State<Step4LocationPermission>
         ),
       ],
     );
-  }
-
-  Future<void> _requestLocation(OnboardingController controller) async {
-    setState(() => _isRequesting = true);
-    await controller.getCurrentLocation();
-    setState(() => _isRequesting = false);
-  }
-
-  void _navigateToNextPage() {
-    final pageView = context.findAncestorWidgetOfExactType<PageView>();
-    if (pageView?.controller != null) {
-      pageView!.controller!.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
   }
 }
