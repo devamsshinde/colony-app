@@ -377,10 +377,34 @@ class _Step5ReadyState extends State<Step5Ready>
   }
 
   Future<void> _completeOnboarding(OnboardingController controller) async {
-    await controller.saveOnboardingData();
-    if (mounted && controller.state.onboardingComplete) {
-      // Navigate to main app
-      Navigator.of(context).pushReplacementNamed('/home');
+    debugPrint('🔄 Starting onboarding completion...');
+
+    final success = await controller.saveOnboardingData();
+
+    debugPrint('📊 Save result: $success, onboardingComplete: ${controller.state.onboardingComplete}');
+
+    if (mounted) {
+      if (success) {
+        debugPrint('✅ Onboarding saved successfully! Popping to AuthWrapper...');
+        // Navigate by popping all routes back to AuthWrapper
+        // AuthWrapper will then re-check onboarding status and let user through
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } else if (controller.state.errorMessage != null) {
+        debugPrint('❌ Error saving onboarding: ${controller.state.errorMessage}');
+        // Show error if save failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(controller.state.errorMessage!),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () => _completeOnboarding(controller),
+            ),
+          ),
+        );
+      }
     }
   }
 }

@@ -88,6 +88,14 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-check onboarding status when widget regains focus
+    // This ensures we refresh after returning from onboarding
+    _checkOnboardingStatus();
+  }
+
+  @override
   void dispose() {
     // Clean up observer
     WidgetsBinding.instance.removeObserver(this);
@@ -144,6 +152,11 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
+    // Skip if already checking or already confirmed completed
+    if (_isCheckingOnboarding || _hasCompletedOnboarding == true) return;
+
+    debugPrint('🔍 Checking onboarding status for user: ${user.id}');
+
     setState(() => _isCheckingOnboarding = true);
 
     try {
@@ -154,17 +167,25 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
           .single();
 
       if (mounted) {
+        final onboardingCompleted = response['onboarding_completed'] ?? false;
+
+        debugPrint('📊 Onboarding status from DB: $onboardingCompleted');
+
         setState(() {
-          _hasCompletedOnboarding = response['onboarding_completed'] ?? false;
+          _hasCompletedOnboarding = onboardingCompleted;
           _isCheckingOnboarding = false;
         });
 
         // If onboarding is complete, start location fetching
-        if (_hasCompletedOnboarding == true) {
+        if (onboardingCompleted == true) {
+          debugPrint('✅ User has completed onboarding, starting location fetching...');
           _startLocationFetching();
+        } else {
+          debugPrint('⚠️ User has NOT completed onboarding');
         }
       }
     } catch (e) {
+      debugPrint('❌ Error checking onboarding status: $e');
       // Profile doesn't exist or error - user needs onboarding
       if (mounted) {
         setState(() {

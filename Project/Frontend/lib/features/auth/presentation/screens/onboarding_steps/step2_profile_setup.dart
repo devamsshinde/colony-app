@@ -219,8 +219,8 @@ class _Step2ProfileSetupState extends State<Step2ProfileSetup> {
           ),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 10,
-            runSpacing: 12,
+            spacing: 16,
+            runSpacing: 16,
             children: ['Male', 'Female', 'Non-binary', 'Prefer not to say'].map(
               (gender) {
                 final isSelected = _selectedGender == gender;
@@ -275,9 +275,23 @@ class _Step2ProfileSetupState extends State<Step2ProfileSetup> {
           Consumer<OnboardingController>(
             builder: (context, controller, child) {
               final isValid = controller.state.isStep2Valid;
-              return SizedBox(
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.fastOutSlowIn,
                 width: double.infinity,
-                height: 56,
+                height: 58,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(29),
+                  boxShadow: isValid
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF1E5631).withOpacity(0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ]
+                      : [],
+                ),
                 child: ElevatedButton(
                   onPressed: isValid
                       ? () {
@@ -287,25 +301,29 @@ class _Step2ProfileSetupState extends State<Step2ProfileSetup> {
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E5631),
-                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledBackgroundColor: const Color(0xFFE0E0E0),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(29),
                     ),
                     elevation: 0,
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         'Continue',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          color: isValid ? Colors.white : Colors.grey.shade500,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward, color: Colors.white),
+                      const SizedBox(width: 10),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: isValid ? Colors.white : Colors.grey.shade500,
+                        size: 22,
+                      ),
                     ],
                   ),
                 ),

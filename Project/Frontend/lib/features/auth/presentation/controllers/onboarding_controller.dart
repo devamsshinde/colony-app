@@ -166,7 +166,7 @@ class OnboardingController extends ChangeNotifier {
           username: profile['username'] ?? '',
           bio: profile['bio'] ?? '',
           avatarUrl: profile['avatar_url'],
-          locationName: profile['location'],
+          locationName: profile['location_name'], // Fixed: was 'location'
         );
         notifyListeners();
       } catch (e) {
@@ -434,7 +434,7 @@ class OnboardingController extends ChangeNotifier {
         'profession': _state.profession,
         'latitude': _state.latitude,
         'longitude': _state.longitude,
-        'location': _state.locationName,
+        'location_name': _state.locationName, // Fixed: was 'location'
         'avatar_url': _state.avatarUrl,
         'onboarding_completed': true,
         'updated_at': DateTime.now().toIso8601String(),

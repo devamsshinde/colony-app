@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final fullName = _userProfile?['full_name'] ?? 'User';
     final username = _userProfile?['username'] ?? 'username';
     final avatarUrl = _userProfile?['avatar_url'];
-    final location = _userProfile?['location'] ?? 'Location not set';
+    final location = _userProfile?['location_name'] ?? 'Location not set'; // Fixed: was 'location'
 
     return Column(
       children: [
